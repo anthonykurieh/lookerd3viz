@@ -1,0 +1,8 @@
+{
+  "visualization": {
+    "name": "D3 Network Graph",
+    "version": "1.0",
+    "description": "A force-directed network graph using D3.js",
+    "script": "https://github.com/anthonykurieh/lookerd3viz/blob/main/viz.js.txt"
+  }
+}
