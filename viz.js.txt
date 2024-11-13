@@ -1,0 +1,80 @@
+// Import D3.js library
+const d3 = require("https://d3js.org/d3.v7.min.js");
+
+// Main function to draw the D3.js visualization
+const drawViz = (data) => {
+  // Clear any existing elements
+  d3.select("#chart").selectAll("*").remove();
+
+  // Set up SVG canvas
+  const width = 600;
+  const height = 400;
+  const svg = d3.select("#chart").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  // Extract nodes and links from Looker Studio data
+  const nodes = data.tables.DEFAULT.map(row => ({
+    id: row.dimension[1],  // User (Node ID)
+    group: row.dimension[2] // Sport (Node Group)
+  }));
+
+  const links = data.tables.DEFAULT.map(row => ({
+    source: row.dimension[1], // User
+    target: row.dimension[2], // Sport
+    value: row.metric[0] // Attendance (Link Strength)
+  }));
+
+  // Set up the force simulation
+  const simulation = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id))
+    .force("charge", d3.forceManyBody())
+    .force("center", d3.forceCenter(width / 2, height / 2));
+
+  // Add links
+  const link = svg.append("g")
+    .selectAll("line")
+    .data(links)
+    .enter().append("line")
+    .attr("stroke", "#999")
+    .attr("stroke-width", d => Math.sqrt(d.value));
+
+  // Add nodes
+  const node = svg.append("g")
+    .selectAll("circle")
+    .data(nodes)
+    .enter().append("circle")
+    .attr("r", 5)
+    .attr("fill", "#69b3a2")
+    .call(d3.drag()
+      .on("start", (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on("drag", (event, d) => {
+        d.fx = event.x;
+        d.fy = event.y;
+      })
+      .on("end", (event, d) => {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }));
+
+  // Update positions on each tick
+  simulation.on("tick", () => {
+    link
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+
+    node
+      .attr("cx", d => d.x)
+      .attr("cy", d => d.y);
+  });
+};
+
+// Subscribe to data updates from Looker Studio
+dscc.subscribeToData(drawViz);
